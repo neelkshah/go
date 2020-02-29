@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -66,15 +68,28 @@ func getDuration(headers http.Header) time.Duration{
 //}
 
 
-func fetch(requestUrl string, cache *Cache) http.Response {
+func fetch(requestUrl string, cache *Cache) string {
 	if cachedValue, ok := cache.hashmap[requestUrl]; ok == true {
 		fmt.Println("Found in cache!")
-		return cachedValue
+		body, err := ioutil.ReadAll(cachedValue.Body)
+		_ = cachedValue.Body.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+		cachedValue.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+		cache.hashmap[requestUrl] = cachedValue
+		return string(body)
 	} else {
 		fmt.Println("Not found in cache!")
-		res := fetchFromSource(requestUrl)
-		cache.hashmap[requestUrl] = res
-		return res
+		response := fetchFromSource(requestUrl)
+		body, err := ioutil.ReadAll(response.Body)
+		_ = response.Body.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+		response.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+		cache.hashmap[requestUrl] = response
+		return string(body)
 	}
 }
 

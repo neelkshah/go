@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func Get(key string, cache *Cache) http.Response {
+func Get(key string, cache *Cache) string {
 	// get value after checking if key exists in cache
 	return fetch(key, cache)
 }
