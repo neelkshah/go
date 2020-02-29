@@ -74,7 +74,6 @@ func fetch(requestUrl string, cache *Cache) http.Response {
 		fmt.Println("Not found in cache!")
 		res := fetchFromSource(requestUrl)
 		cache.hashmap[requestUrl] = res
-		fmt.Println(res.Status)
 		return res
 	}
 }

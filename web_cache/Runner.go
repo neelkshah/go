@@ -25,7 +25,13 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		fmt.Printf("\n%s\n", body)
+		body, err = ioutil.ReadAll(response.Body)
+		_ = response.Body.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("\n%s\n", body)
 		//fmt.Println(response.Header["Etag"][0])
-		fmt.Printf("%s\n", body)
 	}
 }
