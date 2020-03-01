@@ -25,7 +25,9 @@ type Cache struct{
 
 func IsValidUrl(str string) bool {
 	u, err := url.Parse(str)
-	fmt.Println(err)
+	if err != nil {
+		fmt.Println(err)
+	}
 	return err == nil && u.Scheme != "" && u.Host != ""
 }
 
@@ -69,6 +71,7 @@ func getDuration(headers http.Header) time.Duration{
 
 
 func fetch(requestUrl string, cache *Cache) string {
+	start := time.Now().UnixNano()
 	if cachedValue, ok := cache.hashmap[requestUrl]; ok == true {
 		fmt.Println("Found in cache!")
 		body, err := ioutil.ReadAll(cachedValue.Body)
@@ -78,6 +81,9 @@ func fetch(requestUrl string, cache *Cache) string {
 		}
 		cachedValue.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 		cache.hashmap[requestUrl] = cachedValue
+		end := time.Now().UnixNano()
+		execTime := end - start
+		fmt.Println("Fetched in ", execTime, "ns")
 		return string(body)
 	} else {
 		fmt.Println("Not found in cache!")
@@ -89,6 +95,9 @@ func fetch(requestUrl string, cache *Cache) string {
 		}
 		response.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 		cache.hashmap[requestUrl] = response
+		end := time.Now().UnixNano()
+		execTime := end - start
+		fmt.Println("Fetched in ", execTime, "ns")
 		return string(body)
 	}
 }
