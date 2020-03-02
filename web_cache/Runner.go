@@ -9,7 +9,7 @@ import (
 
 func main() {
 	reader := bufio.NewReader(os.Stdin)
-	timeout := time.Second * 500
+	timeout := time.Second * 5
 	cache := CreateCache(timeout)
 	for {
 		requestUrl := ReadInput(*reader)

@@ -14,7 +14,7 @@ func Get(key string, cache *Cache) string {
 
 func CreateCache(timeout time.Duration) *Cache {
 	// create a new cache
-	cache := &Cache{timeout:timeout, hashmap: map[string]http.Response{}, fartherCache:nil}
+	cache := &Cache{timeout: timeout, hashmap: map[string]http.Response{}, fartherCache: nil}
 	go refreshCache(cache)
 	return cache
 }

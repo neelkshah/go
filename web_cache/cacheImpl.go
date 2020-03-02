@@ -90,6 +90,7 @@ func getDuration(headers http.Header) time.Duration{
 
 func refreshEntry(urlString string, ttl time.Duration, cache *Cache) {
 	for {
+		fmt.Println("Refreshing entry")
 		if response, ok := cache.hashmap[urlString]; ok {
 			time.Sleep(ttl)
 			req, _ := http.NewRequest("GET", urlString, nil)
@@ -97,7 +98,10 @@ func refreshEntry(urlString string, ttl time.Duration, cache *Cache) {
 			httpClient := http.Client{}
 			response, _ := httpClient.Do(req)
 			if response.StatusCode == http.StatusNotModified{
-
+				continue
+			} else{
+				response := fetchFromSource(urlString)
+				cache.hashmap[urlString] = response
 			}
 		} else{
 			break
@@ -116,7 +120,7 @@ func addToCache(urlString string, response http.Response, cache *Cache) {
 func refreshCache(cache *Cache) {
 	for {
 		time.Sleep(cache.timeout)
-		if cache.fartherCache.hashmap == nil {
+		if cache == nil || cache.fartherCache == nil || cache.fartherCache.hashmap == nil {
 			cache.hashmap = map[string]http.Response{}
 		} else {
 			for key, value := range cache.hashmap {
