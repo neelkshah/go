@@ -9,8 +9,9 @@ import (
 
 func main() {
 	reader := bufio.NewReader(os.Stdin)
-	timeout := time.Second * 5
+	timeout := time.Second * 10
 	cache := CreateCache(timeout)
+	AddCacheLayer(cache, time.Second * 20)
 	for {
 		requestUrl := ReadInput(*reader)
 		if isValidUrl(requestUrl) == false{
@@ -19,6 +20,5 @@ func main() {
 		}
 		response := Get(requestUrl, cache)
 		fmt.Println(response)
-		//fmt.Println(response.Header["Etag"][0])
 	}
 }

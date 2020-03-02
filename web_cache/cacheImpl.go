@@ -42,36 +42,57 @@ func fetchFromSource(requestUrl string) http.Response {
 
 
 func fetch(requestUrl string, cache *Cache) string {
+	var tempCache = cache
+	var delCache *Cache
 	start := time.Now().UnixNano()
-	if cachedValue, ok := cache.hashmap[requestUrl]; ok == true {
-		fmt.Println("Found in cache!")
-		body, err := ioutil.ReadAll(cachedValue.Body)
-		_ = cachedValue.Body.Close()
-		if err != nil {
-			log.Fatal(err)
+	var found bool
+	var response http.Response
+	var depth = 1
+	for {
+		if cachedValue, ok := tempCache.hashmap[requestUrl]; ok == true {
+			fmt.Println("Found in cache!")
+			found = true
+			response = cachedValue
+			delCache = tempCache
+			break
+		} else {
+			if tempCache.fartherCache != nil {
+				tempCache = tempCache.fartherCache
+				depth += 1
+				continue
+			} else {
+				break
+			}
 		}
-		cachedValue.Body = ioutil.NopCloser(bytes.NewBuffer(body))
-		cache.hashmap[requestUrl] = cachedValue
-		end := time.Now().UnixNano()
-		execTime := end - start
-		fmt.Println("Fetched in ", execTime, "ns")
-		return string(body)
-	} else {
-		fmt.Println("Not found in cache!")
-		response := fetchFromSource(requestUrl)
+	}
+	if found == true {
+		delete(delCache.hashmap, requestUrl)
 		body, err := ioutil.ReadAll(response.Body)
 		_ = response.Body.Close()
 		if err != nil {
 			log.Fatal(err)
 		}
 		response.Body = ioutil.NopCloser(bytes.NewBuffer(body))
-		cache.hashmap[requestUrl] = response
 		addToCache(requestUrl, response, cache)
 		end := time.Now().UnixNano()
 		execTime := end - start
-		fmt.Println("Fetched in ", execTime, "ns")
+		fmt.Println("Fetched in ", execTime, "ns from depth ", depth)
 		return string(body)
 	}
+	fmt.Println("Not found in cache!")
+	response = fetchFromSource(requestUrl)
+	body, err := ioutil.ReadAll(response.Body)
+	_ = response.Body.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+	response.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+	cache.hashmap[requestUrl] = response
+	addToCache(requestUrl, response, cache)
+	end := time.Now().UnixNano()
+	execTime := end - start
+	fmt.Println("Fetched in ", execTime, "ns")
+	return string(body)
 }
 
 
@@ -90,9 +111,9 @@ func getDuration(headers http.Header) time.Duration{
 
 func refreshEntry(urlString string, ttl time.Duration, cache *Cache) {
 	for {
-		fmt.Println("Refreshing entry")
 		if response, ok := cache.hashmap[urlString]; ok {
 			time.Sleep(ttl)
+			fmt.Println("Refreshing entry")
 			req, _ := http.NewRequest("GET", urlString, nil)
 			req.Header.Add("If-None-Match", response.Header["Etag"][0])
 			httpClient := http.Client{}
@@ -117,16 +138,24 @@ func addToCache(urlString string, response http.Response, cache *Cache) {
 }
 
 
+// todo fix.
 func refreshCache(cache *Cache) {
 	for {
+		var parentPointers []*Cache
+		var tempCache = cache
 		time.Sleep(cache.timeout)
-		if cache == nil || cache.fartherCache == nil || cache.fartherCache.hashmap == nil {
-			cache.hashmap = map[string]http.Response{}
-		} else {
-			for key, value := range cache.hashmap {
-				cache.fartherCache.hashmap[key] = value
+		fmt.Println("Refreshing cache!")
+		for {
+			parentPointers = append(parentPointers, cache)
+			if tempCache.fartherCache == nil || tempCache.fartherCache.hashmap == nil {
+				break
+			} else {
+				tempCache = cache.fartherCache
 			}
-			cache.hashmap = map[string]http.Response{}
 		}
+		for i := len(parentPointers) - 1; i > 0; i-- {
+			parentPointers[i].hashmap = parentPointers[i-1].hashmap
+		}
+		parentPointers[0].hashmap = map[string]http.Response{}
 	}
 }
