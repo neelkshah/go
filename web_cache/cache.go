@@ -14,7 +14,9 @@ func Get(key string, cache *Cache) string {
 
 func CreateCache(timeout time.Duration) *Cache {
 	// create a new cache
-	return &Cache{timeout:timeout, hashmap: map[string]http.Response{}, fartherCache:nil}
+	cache := &Cache{timeout:timeout, hashmap: map[string]http.Response{}, fartherCache:nil}
+	go refreshCache(cache)
+	return cache
 }
 
 func DeleteCache(cache *Cache) {
@@ -25,7 +27,7 @@ func DeleteCache(cache *Cache) {
 
 func AddCacheLayer(cache *Cache, timeout time.Duration) *Cache {
 	// add a new cache layer farther away
-	cache.fartherCache = &Cache{timeout:timeout, hashmap: map[string]http.Response{}, fartherCache:nil}
+	cache.fartherCache = CreateCache(timeout)
 	return cache
 }
 

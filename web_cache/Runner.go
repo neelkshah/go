@@ -13,7 +13,7 @@ func main() {
 	cache := CreateCache(timeout)
 	for {
 		requestUrl := ReadInput(*reader)
-		if IsValidUrl(requestUrl) == false{
+		if isValidUrl(requestUrl) == false{
 			fmt.Println("Query seems to be malformed. Please retry :(")
 			continue
 		}
