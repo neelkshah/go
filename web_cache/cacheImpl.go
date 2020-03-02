@@ -94,7 +94,8 @@ func refreshEntry(urlString string, ttl time.Duration, cache *Cache) {
 			time.Sleep(ttl)
 			req, _ := http.NewRequest("GET", urlString, nil)
 			req.Header.Add("If-None-Match", response.Header["Etag"][0])
-			response, _ := http.Client{}.Do(req)
+			httpClient := http.Client{}
+			response, _ := httpClient.Do(req)
 			if response.StatusCode == http.StatusNotModified{
 
 			}
