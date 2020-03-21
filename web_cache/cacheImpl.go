@@ -138,24 +138,21 @@ func addToCache(urlString string, response http.Response, cache *Cache) {
 }
 
 
-// todo fix.
 func refreshCache(cache *Cache) {
 	for {
-		var parentPointers []*Cache
-		var tempCache = cache
 		time.Sleep(cache.timeout)
-		fmt.Println("Refreshing cache!")
-		for {
-			parentPointers = append(parentPointers, cache)
-			if tempCache.fartherCache == nil || tempCache.fartherCache.hashmap == nil {
-				break
+		if len(cache.hashmap) > 0 {
+			fmt.Printf("Refreshing cache!\n%d keys affected", len(cache.hashmap))
+			hashmap := cache.hashmap
+			cache.hashmap = map[string]http.Response{}
+			if cache.fartherCache == nil {
+				return
 			} else {
-				tempCache = cache.fartherCache
+				for key, value := range hashmap {
+					addToCache(key, value, cache.fartherCache)
+				}
+				hashmap = nil
 			}
 		}
-		for i := len(parentPointers) - 1; i > 0; i-- {
-			parentPointers[i].hashmap = parentPointers[i-1].hashmap
-		}
-		parentPointers[0].hashmap = map[string]http.Response{}
 	}
 }
